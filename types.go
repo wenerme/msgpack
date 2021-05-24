@@ -318,6 +318,16 @@ type isZeroer interface {
 }
 
 func isEmptyValue(v reflect.Value) bool {
+ELEM:
+	// unwrap Interface type of nil ptr
+	switch v.Kind() {
+	case reflect.Interface, reflect.Ptr:
+		if v.IsNil() {
+			return true
+		}
+		v = v.Elem()
+		goto ELEM
+	}
 	if z, ok := v.Interface().(isZeroer); ok {
 		return nilable(v.Kind()) && v.IsNil() || z.IsZero()
 	}
@@ -332,8 +342,6 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.Uint() == 0
 	case reflect.Float32, reflect.Float64:
 		return v.Float() == 0
-	case reflect.Interface, reflect.Ptr:
-		return v.IsNil()
 	}
 	return false
 }
